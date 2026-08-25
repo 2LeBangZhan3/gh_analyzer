@@ -20,6 +20,7 @@
 - **技术栈报告**：识别主要语言、框架、数据库与工程化工具
 - **项目总结**：生成结构化总结（简介、基本信息、技术定位、目录解读）
 - **面试题生成**：根据检测到的语言与框架，自动生成项目题 + 语言题 + 框架题
+- **交互式 Web 界面**：提供浏览器可视化界面，输入地址即可查看分析结果
 
 ## 环境要求
 
@@ -41,6 +42,31 @@ python3 analyzer.py psf/requests --output report.md
 # 分析本地目录
 python3 analyzer.py --local ./my-project
 ```
+
+## 交互式 Web 界面
+
+启动本地 Web 服务后，在浏览器中即可使用可视化界面：
+
+```bash
+# 启动（默认 http://127.0.0.1:8000）
+python3 webapp.py
+
+# 指定端口
+python3 webapp.py --port 9000
+
+# 提供 token（避免 API 限流，也可用 GITHUB_TOKEN 环境变量）
+python3 webapp.py --token your_token_here
+```
+
+浏览器打开 http://127.0.0.1:8000 后，输入 GitHub 地址即可看到：
+
+- 仓库基本信息（Star、Fork、描述、主题标签）
+- 语言分布条形图与框架/数据库/工具标签
+- 项目结构树
+- 项目总结
+- 分组面试题
+
+Web 界面同样支持「git clone」模式，勾选页面上的 `git clone` 复选框即可在 API 限流时改用克隆方式分析。
 
 ## 数据获取方式
 
@@ -94,11 +120,14 @@ pytest
 
 ```text
 analyzer.py               # CLI 入口
+webapp.py                 # Web 服务入口（HTTP 服务器 + 分析 API）
+static/
+└── index.html            # 交互式前端界面（HTML/CSS/JS）
 gh_analyzer/
 ├── __init__.py
 ├── github.py             # 数据获取（GitHub API / clone / 本地目录）
 ├── techstack.py          # 技术栈检测（语言、框架、数据库、工具）
-├── summary.py            # 项目总结生成
+├── summary.py             # 项目总结生成
 ├── interview.py          # 面试题知识库与生成
 └── report.py             # Markdown 报告渲染
 ```

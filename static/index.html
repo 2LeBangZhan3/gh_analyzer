@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GH Analyzer — AI 仓库分析助手</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0f14;
+    --bg-deep: #080b0f;
+    --surface: #11161d;
+    --surface-2: #161d26;
+    --line: rgba(255, 255, 255, 0.07);
+    --line-strong: rgba(255, 255, 255, 0.14);
+    --text: #e9eef4;
+    --muted: #8b96a6;
+    --accent: #2ee6a8;
+    --accent-dim: rgba(46, 230, 168, 0.14);
+    --amber: #ffb454;
+    --amber-dim: rgba(255, 180, 84, 0.14);
+    --red: #ff6b6b;
+    --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+    --sans: "Sora", "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 44px 44px;
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(900px 500px at 15% -5%, rgba(46,230,168,0.10), transparent 60%),
+      radial-gradient(800px 500px at 95% 0%, rgba(255,180,84,0.07), transparent 55%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap { position: relative; z-index: 1; max-width: 1040px; margin: 0 auto; padding: 0 28px; }
+
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 0; border-bottom: 1px solid var(--line);
+    animation: fadeDown .6s ease both;
+  }
+  .brand { font-family: var(--mono); font-weight: 600; letter-spacing: .14em; font-size: 15px; color: var(--text); }
+  .brand em { color: var(--accent); font-style: normal; }
+  .status { font-family: var(--mono); font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 8px; letter-spacing: .08em; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); animation: pulse 2.2s ease-in-out infinite; }
+
+  .hero { padding: 84px 0 40px; animation: fadeUp .7s ease both; animation-delay: .08s; }
+  .hero .kicker { font-family: var(--mono); font-size: 12px; letter-spacing: .22em; color: var(--accent); text-transform: uppercase; margin-bottom: 20px; }
+  .hero h1 { font-size: clamp(34px, 6vw, 58px); font-weight: 800; line-height: 1.08; letter-spacing: -0.02em; max-width: 640px; }
+  .hero h1 .accent { color: transparent; background: linear-gradient(120deg, var(--accent), #7ff5d0); -webkit-background-clip: text; background-clip: text; }
+  .hero .sub { margin-top: 18px; color: var(--muted); font-size: 17px; max-width: 520px; }
+
+  .search {
+    margin-top: 36px; display: flex; align-items: center; gap: 0;
+    background: var(--surface); border: 1px solid var(--line-strong);
+    border-radius: 14px; padding: 6px 6px 6px 18px; max-width: 760px;
+    box-shadow: 0 18px 50px -20px rgba(0,0,0,0.7);
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-dim), 0 18px 50px -20px rgba(0,0,0,0.7); }
+  .prompt { font-family: var(--mono); color: var(--accent); font-weight: 600; font-size: 18px; margin-right: 12px; user-select: none; }
+  .search input[type="text"] {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: var(--text); font-family: var(--mono); font-size: 15px; padding: 13px 0;
+  }
+  .search input[type="text"]::placeholder { color: #4a5563; }
+  .clone-toggle { font-family: var(--mono); font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; white-space: nowrap; padding: 0 14px; cursor: pointer; user-select: none; }
+  .clone-toggle input { accent-color: var(--accent); cursor: pointer; }
+  .btn {
+    font-family: var(--sans); font-weight: 600; font-size: 15px; color: #07130e;
+    background: var(--accent); border: none; border-radius: 10px;
+    padding: 12px 24px; cursor: pointer; transition: transform .12s, filter .12s;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn kbd { font-family: var(--mono); font-size: 12px; opacity: .6; }
+
+  .examples { margin-top: 16px; font-family: var(--mono); font-size: 12.5px; color: var(--muted); }
+  .examples a { color: var(--muted); text-decoration: none; border-bottom: 1px dashed var(--line-strong); margin-right: 14px; cursor: pointer; transition: color .15s; }
+  .examples a:hover { color: var(--accent); }
+
+  .loading { padding: 70px 0; text-align: center; }
+  .loading.hidden, .error.hidden, .results.hidden { display: none; }
+  .scanner { position: relative; width: 100%; max-width: 560px; height: 3px; margin: 0 auto 22px; background: var(--surface-2); border-radius: 3px; overflow: hidden; }
+  .scanner::after { content: ""; position: absolute; top: 0; left: -40%; width: 40%; height: 100%; background: linear-gradient(90deg, transparent, var(--accent), transparent); animation: scan 1.2s linear infinite; }
+  .loading p { font-family: var(--mono); color: var(--muted); font-size: 14px; letter-spacing: .08em; }
+
+  .error { margin-top: 36px; background: rgba(255,107,107,0.08); border: 1px solid rgba(255,107,107,0.3); border-radius: 12px; padding: 18px 22px; color: #ffb3b3; font-family: var(--mono); font-size: 14px; line-height: 1.6; }
+  .error b { color: var(--red); }
+
+  .results { padding: 40px 0 90px; }
+  .repo-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; flex-wrap: wrap; margin-bottom: 34px; padding-bottom: 26px; border-bottom: 1px solid var(--line); animation: fadeUp .5s ease both; }
+  .repo-head .name { font-size: 28px; font-weight: 800; letter-spacing: -0.01em; }
+  .repo-head .desc { color: var(--muted); margin-top: 8px; max-width: 560px; line-height: 1.6; font-size: 15px; }
+  .repo-stats { display: flex; gap: 22px; font-family: var(--mono); font-size: 13px; color: var(--muted); }
+  .repo-stats b { color: var(--text); font-weight: 600; }
+  .repo-actions { display: flex; gap: 12px; margin-top: 14px; flex-wrap: wrap; align-items: center; }
+  .gh-link { display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 13px; color: var(--accent); text-decoration: none; border: 1px solid var(--accent); border-radius: 8px; padding: 9px 16px; transition: background .15s; }
+  .gh-link:hover { background: var(--accent-dim); }
+  .topic { font-family: var(--mono); font-size: 12px; color: var(--muted); border: 1px solid var(--line-strong); border-radius: 999px; padding: 4px 12px; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 24px; animation: fadeUp .5s ease both; }
+  .card h3 { font-size: 14px; font-family: var(--mono); font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 20px; }
+  .card h3 .idx { color: var(--muted); margin-right: 8px; }
+
+  .lang-row { margin-bottom: 16px; }
+  .lang-row:last-child { margin-bottom: 0; }
+  .lang-row .top { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 13px; margin-bottom: 7px; }
+  .lang-row .top .pct { color: var(--muted); }
+  .bar { height: 8px; background: var(--surface-2); border-radius: 6px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), #7ff5d0); border-radius: 6px; transition: width .6s ease; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; }
+  .chip { font-family: var(--mono); font-size: 13px; padding: 8px 14px; border-radius: 8px; background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(46,230,168,0.25); }
+  .chip.amber { background: var(--amber-dim); color: var(--amber); border-color: rgba(255,180,84,0.25); }
+  .chip.neutral { background: var(--surface-2); color: var(--muted); border-color: var(--line); }
+  .chip-group { margin-bottom: 18px; }
+  .chip-group:last-child { margin-bottom: 0; }
+  .chip-group .label { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-bottom: 10px; letter-spacing: .06em; }
+  .empty { font-family: var(--mono); font-size: 13px; color: #4a5563; }
+
+  .card.full { margin-top: 20px; }
+
+  .tree { font-family: var(--mono); font-size: 13.5px; line-height: 2; }
+  .tree .line { display: flex; gap: 10px; }
+  .tree .branch { color: var(--muted); user-select: none; }
+  .tree .folder { color: var(--amber); }
+  .tree .purpose { color: var(--muted); font-size: 12.5px; }
+
+  .summary dl { display: grid; grid-template-columns: 140px 1fr; row-gap: 14px; column-gap: 18px; }
+  .summary dt { font-family: var(--mono); font-size: 13px; color: var(--muted); }
+  .summary dd { font-size: 14.5px; line-height: 1.6; }
+  .scale-bar { display: flex; gap: 3px; align-items: flex-end; height: 54px; margin-top: 18px; }
+  .scale-bar .col { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 6px; }
+  .scale-bar .col i { width: 100%; background: linear-gradient(180deg, var(--accent), rgba(46,230,168,0.15)); border-radius: 4px 4px 0 0; min-height: 3px; }
+  .scale-bar .col span { font-family: var(--mono); font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px; }
+
+  .q-cat { margin-bottom: 26px; }
+  .q-cat h4 { font-family: var(--mono); font-size: 14px; color: var(--amber); margin-bottom: 12px; letter-spacing: .04em; }
+  .q-cat ol { list-style: none; counter-reset: q; }
+  .q-cat li { position: relative; padding: 12px 16px 12px 46px; margin-bottom: 8px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; font-size: 14.5px; line-height: 1.55; counter-increment: q; transition: border-color .15s; }
+  .q-cat li:hover { border-color: var(--line-strong); }
+  .q-cat li::before { content: counter(q); position: absolute; left: 16px; top: 12px; font-family: var(--mono); font-size: 12px; color: var(--amber); font-weight: 600; }
+
+  footer { border-top: 1px solid var(--line); padding: 26px 0 40px; margin-top: 20px; font-family: var(--mono); font-size: 12px; color: #4a5563; letter-spacing: .04em; }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+  @keyframes fadeDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
+  @keyframes scan { to { left: 100%; } }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+
+  @media (max-width: 720px) {
+    .grid { grid-template-columns: 1fr; }
+    .search { flex-wrap: wrap; padding: 10px; }
+    .search input[type="text"] { min-width: 100%; }
+    .clone-toggle { padding: 8px 4px; }
+    .summary dl { grid-template-columns: 1fr; row-gap: 6px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="topbar">
+    <div class="brand">GH<em>_</em>ANALYZER</div>
+    <div class="status"><span class="dot"></span>SYSTEM READY</div>
+  </header>
+
+  <section class="hero">
+    <div class="kicker">Repository Intelligence</div>
+    <h1>分析任何 <span class="accent">GitHub</span> 仓库</h1>
+    <p class="sub">输入仓库地址，自动生成技术栈报告、项目总结与面试题。</p>
+
+    <form id="analyzeForm" class="search" autocomplete="off">
+      <span class="prompt">&gt;</span>
+      <input id="urlInput" type="text" placeholder="https://github.com/owner/repo" spellcheck="false">
+      <label class="clone-toggle"><input type="checkbox" id="cloneMode"> git clone</label>
+      <button type="submit" class="btn">分析 <kbd>↵</kbd></button>
+    </form>
+    <div class="examples">
+      试试：<a data-url="https://github.com/psf/requests">psf/requests</a>
+      <a data-url="https://github.com/fastapi/fastapi">fastapi/fastapi</a>
+      <a data-url="https://github.com/gin-gonic/gin">gin-gonic/gin</a>
+    </div>
+  </section>
+
+  <section id="loading" class="loading hidden">
+    <div class="scanner"></div>
+    <p>SCANNING REPOSITORY…</p>
+  </section>
+
+  <section id="error" class="error hidden"></section>
+
+  <section id="results" class="results hidden"></section>
+
+  <footer>GH ANALYZER · 仅使用 Python 标准库 · 数据来源：GitHub API</footer>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const form = $("#analyzeForm");
+const input = $("#urlInput");
+const loading = $("#loading");
+const errorBox = $("#error");
+const results = $("#results");
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const url = input.value.trim();
+  if (!url) { showError("请输入 GitHub 仓库地址"); return; }
+  await run(url);
+});
+
+document.querySelectorAll(".examples a").forEach((a) => {
+  a.addEventListener("click", () => {
+    input.value = a.dataset.url;
+    run(a.dataset.url);
+  });
+});
+
+async function run(url) {
+  loading.classList.remove("hidden");
+  errorBox.classList.add("hidden");
+  results.classList.add("hidden");
+
+  const mode = $("#cloneMode").checked ? "clone" : "api";
+  const qs = new URLSearchParams({ url, mode });
+  try {
+    const resp = await fetch("/api/analyze?" + qs.toString());
+    const data = await resp.json();
+    if (!resp.ok) { showError(data.error || "分析失败"); return; }
+    render(data);
+  } catch (err) {
+    showError("无法连接到服务端：" + err.message);
+  } finally {
+    loading.classList.add("hidden");
+  }
+}
+
+function showError(msg) {
+  errorBox.innerHTML = "<b>ERROR</b>　" + escapeHtml(msg);
+  errorBox.classList.remove("hidden");
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+}
+
+function render(data) {
+  const m = data.meta, t = data.tech_stack;
+  const html = `
+    ${renderRepoHead(m, t)}
+    <div class="grid">
+      ${renderLangCard(t)}
+      ${renderChipsCard(t)}
+    </div>
+    ${renderSummaryCard(m, t)}
+    ${renderDirCard(t)}
+    ${renderQuestionsCard(data.questions)}
+  `;
+  results.innerHTML = html;
+  results.classList.remove("hidden");
+  results.scrollIntoView({ behavior: "smooth", block: "start" });
+  results.querySelectorAll(".card, .repo-head").forEach((el, i) => {
+    el.style.animationDelay = (i * 0.06) + "s";
+  });
+}
+
+function renderRepoHead(m, t) {
+  const topics = (m.topics || []).slice(0, 8).map((x) => `<span class="topic">${escapeHtml(x)}</span>`).join("");
+  return `
+    <div class="repo-head">
+      <div>
+        <div class="name">${escapeHtml(m.full_name)}</div>
+        <div class="desc">${escapeHtml(m.description || "（无描述）")}</div>
+        <div class="repo-actions">
+          <a class="gh-link" href="${escapeHtml(m.url)}" target="_blank" rel="noopener">↗ 在 GitHub 打开</a>
+          ${topics}
+        </div>
+      </div>
+      <div class="repo-stats">
+        <span>★ <b>${fmtNum(m.stars)}</b></span>
+        <span>⑂ <b>${fmtNum(m.forks)}</b></span>
+        <span>文件 <b>${fmtNum(t.total_files)}</b></span>
+      </div>
+    </div>`;
+}
+
+function renderLangCard(t) {
+  const rows = (t.languages || []).slice(0, 7).map((l) => `
+    <div class="lang-row">
+      <div class="top"><span>${escapeHtml(l.name)}</span><span class="pct">${l.pct}%</span></div>
+      <div class="bar"><i style="width:${Math.max(l.pct, 2)}%"></i></div>
+    </div>`).join("");
+  return `
+    <div class="card">
+      <h3><span class="idx">01</span>技术栈 · 语言</h3>
+      ${rows || '<div class="empty">未检测到语言</div>'}
+    </div>`;
+}
+
+function renderChipsCard(t) {
+  const groups = [
+    { label: "框架 / 库", items: t.frameworks, cls: "" },
+    { label: "数据库 / 存储", items: t.databases, cls: "amber" },
+    { label: "工程化 / 基础设施", items: t.tools, cls: "neutral" },
+  ];
+  const body = groups.map((g) => `
+    <div class="chip-group">
+      <div class="label">${g.label}</div>
+      <div class="chips">${(g.items || []).length
+        ? g.items.map((x) => `<span class="chip ${g.cls}">${escapeHtml(x)}</span>`).join("")
+        : '<span class="empty">未检测到</span>'}</div>
+    </div>`).join("");
+  return `
+    <div class="card">
+      <h3><span class="idx">02</span>技术栈 · 组件</h3>
+      ${body}
+    </div>`;
+}
+
+function renderSummaryCard(m, t) {
+  const langs = (t.languages || []).map((l) => `${l.name} ${l.pct}%`).join("、");
+  const scale = renderScale(t.file_count_by_language);
+  return `
+    <div class="card full summary">
+      <h3><span class="idx">03</span>项目总结</h3>
+      <dl>
+        <dt>简介</dt><dd>${escapeHtml(m.description || "（无描述）")}</dd>
+        <dt>主要语言</dt><dd>${escapeHtml(langs || "未知")}</dd>
+        <dt>框架</dt><dd>${escapeHtml((t.frameworks || []).join("、") || "—")}</dd>
+        <dt>数据存储</dt><dd>${escapeHtml((t.databases || []).join("、") || "—")}</dd>
+        <dt>默认分支</dt><dd>${escapeHtml(m.default_branch)}</dd>
+      </dl>
+      ${scale}
+    </div>`;
+}
+
+function renderScale(counts) {
+  const entries = Object.entries(counts || {}).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  if (!entries.length) return "";
+  const max = entries[0][1];
+  const cols = entries.map(([lang, n]) => {
+    const h = Math.max(8, Math.round((n / max) * 100));
+    return `<div class="col" title="${escapeHtml(lang)}: ${n}"><i style="height:${h}%"></i><span>${escapeHtml(lang)}</span></div>`;
+  }).join("");
+  return `<div class="scale-bar">${cols}</div>`;
+}
+
+function renderDirCard(t) {
+  const dirs = t.top_dirs || [];
+  if (!dirs.length) return "";
+  const lines = dirs.map((d, i) => {
+    const last = i === dirs.length - 1;
+    return `<div class="line"><span class="branch">${last ? "└─" : "├─"}</span><span class="folder">${escapeHtml(d.name)}/</span><span class="purpose">${escapeHtml(d.purpose || "")}</span></div>`;
+  }).join("");
+  return `
+    <div class="card full">
+      <h3><span class="idx">04</span>项目结构</h3>
+      <div class="tree">${lines}</div>
+    </div>`;
+}
+
+function renderQuestionsCard(questions) {
+  questions = questions || [];
+  if (!questions.length) return "";
+  const groups = {};
+  questions.forEach((q) => { (groups[q.category] = groups[q.category] || []).push(q.question); });
+  const body = Object.entries(groups).map(([cat, list]) => `
+    <div class="q-cat">
+      <h4>${escapeHtml(cat)}</h4>
+      <ol>${list.map((q) => `<li>${escapeHtml(q)}</li>`).join("")}</ol>
+    </div>`).join("");
+  return `
+    <div class="card full">
+      <h3><span class="idx">05</span>面试题</h3>
+      ${body}
+    </div>`;
+}
+
+function fmtNum(n) {
+  n = Number(n) || 0;
+  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, "") + "k";
+  return String(n);
+}
+</script>
+</body>
+</html>
