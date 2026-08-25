@@ -69,7 +69,7 @@ def _stack_to_dict(stack: TechStack) -> dict:
         "frameworks": stack.frameworks,
         "databases": stack.databases,
         "tools": stack.tools,
-        "directories": stack.directories,
+        "structure": stack.structure.to_dict() if stack.structure else None,
         "file_count_by_language": stack.file_count_by_language,
         "total_files": stack.total_files,
     }

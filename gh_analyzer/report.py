@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from .github import RepoData
 from .summary import generate_summary
-from .techstack import TechStack, detect_tech_stack, render_directory_tree
+from .techstack import TechStack, detect_tech_stack, render_structure_tree
 
 
 def build_report(data: RepoData) -> str:
@@ -22,8 +22,8 @@ def build_report(data: RepoData) -> str:
 
 
 def _structure_section(stack: TechStack) -> str:
-    """渲染完整的目录结构（每个目录都标注用途）。"""
-    tree = render_directory_tree(stack.directories)
+    """渲染完整的目录结构（每个目录标注用途，重要文件标注说明）。"""
+    tree = render_structure_tree(stack.structure)
     if not tree:
         return ""
     lines = ["## 项目结构", ""]

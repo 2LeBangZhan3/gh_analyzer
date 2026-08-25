@@ -424,6 +424,108 @@ TOKEN_PURPOSES = [
 ]
 
 
+# 重要文件（精确匹配文件名，小写）-> 用途说明
+IMPORTANT_FILES = {
+    # 文档
+    "readme.md": "项目说明文档",
+    "readme.rst": "项目说明文档",
+    "readme": "项目说明文档",
+    "readme.txt": "项目说明文档",
+    "license": "开源许可证",
+    "license.md": "开源许可证",
+    "license.txt": "开源许可证",
+    "licence": "开源许可证",
+    "changelog.md": "变更日志",
+    "changelog": "变更日志",
+    "contributing.md": "贡献指南",
+    "code_of_conduct.md": "行为准则",
+    "security.md": "安全策略",
+    "authors": "作者列表",
+    "authors.md": "作者列表",
+    # 构建与依赖
+    "dockerfile": "容器镜像构建配置",
+    "docker-compose.yml": "容器编排配置",
+    "docker-compose.yaml": "容器编排配置",
+    "compose.yml": "容器编排配置",
+    "makefile": "构建自动化脚本",
+    "justfile": "构建自动化脚本",
+    "cmakelists.txt": "CMake 构建配置",
+    "package.json": "Node 依赖与脚本",
+    "package-lock.json": "Node 依赖锁定",
+    "yarn.lock": "Yarn 依赖锁定",
+    "pnpm-lock.yaml": "pnpm 依赖锁定",
+    "requirements.txt": "Python 依赖声明",
+    "requirements-dev.txt": "Python 开发依赖",
+    "pyproject.toml": "Python 项目配置",
+    "setup.py": "Python 打包配置",
+    "setup.cfg": "Python 打包配置",
+    "poetry.lock": "Poetry 依赖锁定",
+    "pipfile": "Python 依赖声明",
+    "go.mod": "Go 模块定义",
+    "go.sum": "Go 依赖校验",
+    "cargo.toml": "Rust 包配置",
+    "cargo.lock": "Rust 依赖锁定",
+    "pom.xml": "Maven 构建配置",
+    "build.gradle": "Gradle 构建配置",
+    "build.gradle.kts": "Gradle 构建配置",
+    "settings.gradle": "Gradle 项目设置",
+    "gradlew": "Gradle 包装脚本",
+    "gemfile": "Ruby 依赖声明",
+    "gemfile.lock": "Ruby 依赖锁定",
+    "rakefile": "Rake 任务定义",
+    "composer.json": "PHP 依赖声明",
+    "composer.lock": "PHP 依赖锁定",
+    "mix.exs": "Elixir 项目配置",
+    "rebar.config": "Erlang 构建配置",
+    # 配置
+    ".gitignore": "Git 忽略规则",
+    ".gitattributes": "Git 属性配置",
+    ".gitmodules": "Git 子模块配置",
+    ".dockerignore": "Docker 忽略规则",
+    ".editorconfig": "编辑器风格配置",
+    ".env.example": "环境变量示例",
+    ".env.sample": "环境变量示例",
+    ".env.template": "环境变量示例",
+    ".prettierrc": "Prettier 配置",
+    ".prettierrc.json": "Prettier 配置",
+    ".prettierrc.js": "Prettier 配置",
+    ".eslintrc": "ESLint 配置",
+    ".eslintrc.js": "ESLint 配置",
+    ".eslintrc.json": "ESLint 配置",
+    ".eslintignore": "ESLint 忽略规则",
+    "tsconfig.json": "TypeScript 配置",
+    "vite.config.js": "Vite 配置",
+    "vite.config.ts": "Vite 配置",
+    "webpack.config.js": "Webpack 配置",
+    "jest.config.js": "Jest 配置",
+    "babel.config.js": "Babel 配置",
+    ".flake8": "Flake8 配置",
+    "tox.ini": "tox 配置",
+    "mypy.ini": "mypy 配置",
+    ".pylintrc": "pylint 配置",
+    # 入口
+    "main.py": "程序入口",
+    "main.go": "程序入口",
+    "main.rs": "程序入口",
+    "main.c": "程序入口",
+    "main.cpp": "程序入口",
+    "app.py": "应用入口",
+    "app.go": "应用入口",
+    "manage.py": "Django 管理入口",
+    "index.js": "入口文件",
+    "index.ts": "入口文件",
+    "index.html": "入口页面",
+    "server.py": "服务入口",
+    "wsgi.py": "WSGI 入口",
+    "asgi.py": "ASGI 入口",
+}
+
+
+def important_file_purpose(filename: str) -> str:
+    """返回重要文件的用途说明；非重要文件返回空字符串。"""
+    return IMPORTANT_FILES.get(filename.lower(), "")
+
+
 def infer_dir_purpose(name: str, files: list[str]) -> str:
     """推断单个目录的用途：精确名 -> 关键词 -> 内容特征 -> 兜底。"""
     lowered = name.lower()
@@ -501,7 +603,7 @@ class TechStack:
     tools: list[str] = field(default_factory=list)
     file_count_by_language: dict[str, int] = field(default_factory=dict)
     total_files: int = 0
-    directories: list[dict] = field(default_factory=list)  # {path, name, depth, purpose, file_count}
+    structure: "StructureNode" = None  # 根节点，目录树 + 重要文件
 
     @property
     def primary_language(self) -> str:
@@ -543,8 +645,8 @@ def detect_tech_stack(data: RepoData) -> TechStack:
     if "makefile" in paths:
         _add_unique(stack.tools, "Make")
 
-    # 4. 完整目录结构（每个目录都推断用途）
-    stack.directories = analyze_directories(data.files)
+    # 4. 完整目录结构（每个目录推断用途，并标注重要文件）
+    stack.structure = analyze_structure(data.files)
 
     return stack
 
@@ -583,65 +685,85 @@ def _ext(path: str) -> str:
     return path[dot:].lower()
 
 
-def analyze_directories(files: list[str]) -> list[dict]:
-    """构建完整目录树，为每个目录推断用途。
+@dataclass
+class StructureNode:
+    """目录树节点，包含子目录和该目录下的重要文件。"""
 
-    返回按路径排序的目录列表，每项为
-    ``{path, name, depth, purpose, file_count}``；``depth`` 从 1 开始，
-    用于前端/报告按层级渲染成树。
-    """
+    name: str = ""
+    purpose: str = ""
+    file_count: int = 0  # 直接位于该目录下的文件数
+    dirs: list["StructureNode"] = field(default_factory=list)
+    files: list[dict] = field(default_factory=list)  # [{"name", "purpose"}]
+
+    def to_dict(self) -> dict:
+        return {
+            "name": self.name,
+            "purpose": self.purpose,
+            "file_count": self.file_count,
+            "dirs": [d.to_dict() for d in self.dirs],
+            "files": self.files,
+        }
+
+
+def analyze_structure(files: list[str]) -> StructureNode:
+    """构建嵌套目录树，标注每个目录的用途和重要文件。"""
+    # 统计每个目录下（递归）的全部文件，供用途推断使用
     files_by_dir: dict[str, list[str]] = {}
     for path in files:
         parts = path.split("/")
-        # 对路径中的每一层目录（不含文件名本身）登记该文件
         for i in range(1, len(parts)):
             dir_path = "/".join(parts[:i])
             files_by_dir.setdefault(dir_path, []).append(path)
 
-    directories: list[dict] = []
-    for dir_path in sorted(files_by_dir.keys()):
-        name = dir_path.rsplit("/", 1)[-1]
-        files_in_dir = files_by_dir[dir_path]
-        direct_files = sum(
-            1 for f in files_in_dir if f.rsplit("/", 1)[0] == dir_path
-        )
-        directories.append(
-            {
-                "path": dir_path,
-                "name": name,
-                "depth": dir_path.count("/") + 1,
-                "purpose": infer_dir_purpose(name, files_in_dir),
-                "file_count": direct_files,
-            }
-        )
-    return directories
+    root = StructureNode()
+    for path in sorted(files):
+        parts = path.split("/")
+        node = root
+        for part in parts[:-1]:
+            child = next((d for d in node.dirs if d.name == part), None)
+            if child is None:
+                child = StructureNode(name=part)
+                node.dirs.append(child)
+            node = child
+        filename = parts[-1]
+        node.file_count += 1
+        purpose = important_file_purpose(filename)
+        if purpose:
+            node.files.append({"name": filename, "purpose": purpose})
+
+    _annotate_structure(root, "", files_by_dir)
+    return root
 
 
-def render_directory_tree(directories: list[dict]) -> str:
-    """把目录列表渲染成带用途说明的文本树。"""
-    if not directories:
+def _annotate_structure(node: StructureNode, path: str, files_by_dir: dict) -> None:
+    """递归为每个目录节点推断用途。"""
+    for child in node.dirs:
+        child_path = f"{path}/{child.name}" if path else child.name
+        child.purpose = infer_dir_purpose(child.name, files_by_dir.get(child_path, []))
+        _annotate_structure(child, child_path, files_by_dir)
+
+
+def render_structure_tree(root: StructureNode) -> str:
+    """把嵌套目录树渲染成带用途说明的文本树（目录在前、文件在后）。"""
+    if root is None:
         return ""
     lines: list[str] = []
-    n = len(directories)
-    for i, d in enumerate(directories):
-        depth = d["depth"]
-        parent = d["path"].rsplit("/", 1)[0] if "/" in d["path"] else ""
 
-        is_last = True
-        j = i + 1
-        while j < n and directories[j]["depth"] >= depth:
-            dj = directories[j]
-            if dj["depth"] == depth:
-                dj_parent = dj["path"].rsplit("/", 1)[0] if "/" in dj["path"] else ""
-                if dj_parent == parent:
-                    is_last = False
-                    break
-            j += 1
+    def walk(node: StructureNode, prefix: str) -> None:
+        dirs = sorted(node.dirs, key=lambda d: d.name.lower())
+        files = sorted(node.files, key=lambda f: f["name"].lower())
+        items: list[tuple] = [(d, True) for d in dirs] + [(f, False) for f in files]
+        for i, (item, is_dir) in enumerate(items):
+            is_last = i == len(items) - 1
+            connector = "└── " if is_last else "├── "
+            if is_dir:
+                count = f" ({item.file_count} 个文件)" if item.file_count else ""
+                lines.append(f"{prefix}{connector}{item.name}/  # {item.purpose}{count}")
+                walk(item, prefix + ("    " if is_last else "│   "))
+            else:
+                lines.append(f"{prefix}{connector}{item['name']}  # {item['purpose']}")
 
-        indent = "    " * (depth - 1)
-        branch = "└── " if is_last else "├── "
-        count = f" ({d['file_count']} 个文件)" if d["file_count"] else ""
-        lines.append(f"{indent}{branch}{d['name']}/  # {d['purpose']}{count}")
+    walk(root, "")
     return "\n".join(lines)
 
 
