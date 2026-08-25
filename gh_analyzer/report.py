@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from .github import RepoData
 from .summary import generate_summary
-from .techstack import TechStack, detect_tech_stack
+from .techstack import TechStack, detect_tech_stack, render_directory_tree
 
 
 def build_report(data: RepoData) -> str:
@@ -15,9 +15,23 @@ def build_report(data: RepoData) -> str:
     parts.append(f"# GitHub 仓库分析报告：{data.full_name}")
     parts.append("")
     parts.append(_tech_stack_section(stack))
+    parts.append(_structure_section(stack))
     parts.append(generate_summary(data, stack))
     parts.append(_interview_section(data, stack))
     return "\n".join(parts)
+
+
+def _structure_section(stack: TechStack) -> str:
+    """渲染完整的目录结构（每个目录都标注用途）。"""
+    tree = render_directory_tree(stack.directories)
+    if not tree:
+        return ""
+    lines = ["## 项目结构", ""]
+    lines.append("```text")
+    lines.append(tree)
+    lines.append("```")
+    lines.append("")
+    return "\n".join(lines)
 
 
 def _tech_stack_section(stack: TechStack) -> str:
@@ -48,15 +62,6 @@ def _tech_stack_section(stack: TechStack) -> str:
         lines.append("### 工程化 / 基础设施")
         lines.append("")
         lines.append("、".join(stack.tools))
-        lines.append("")
-
-    if stack.top_dirs:
-        lines.append("### 项目结构（顶级目录）")
-        lines.append("")
-        lines.append("```text")
-        lines.append("├── " + "\n├── ".join(name for name, _ in stack.top_dirs) + "/")
-        lines.append("└── ...")
-        lines.append("```")
         lines.append("")
 
     return "\n".join(lines).rstrip() + "\n"

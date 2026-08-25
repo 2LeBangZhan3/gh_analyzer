@@ -154,10 +154,11 @@
   .card.full { margin-top: 20px; }
 
   .tree { font-family: var(--mono); font-size: 13.5px; line-height: 2; }
-  .tree .line { display: flex; gap: 10px; }
+  .tree .line { display: flex; gap: 10px; align-items: baseline; }
   .tree .branch { color: var(--muted); user-select: none; }
   .tree .folder { color: var(--amber); }
   .tree .purpose { color: var(--muted); font-size: 12.5px; }
+  .tree .filecount { color: #4a5563; font-size: 12px; }
 
   .summary dl { display: grid; grid-template-columns: 140px 1fr; row-gap: 14px; column-gap: 18px; }
   .summary dt { font-family: var(--mono); font-size: 13px; color: var(--muted); }
@@ -379,11 +380,24 @@ function renderScale(counts) {
 }
 
 function renderDirCard(t) {
-  const dirs = t.top_dirs || [];
+  const dirs = t.directories || [];
   if (!dirs.length) return "";
   const lines = dirs.map((d, i) => {
-    const last = i === dirs.length - 1;
-    return `<div class="line"><span class="branch">${last ? "└─" : "├─"}</span><span class="folder">${escapeHtml(d.name)}/</span><span class="purpose">${escapeHtml(d.purpose || "")}</span></div>`;
+    const depth = d.depth || 1;
+    const parent = d.path.includes("/") ? d.path.slice(0, d.path.lastIndexOf("/")) : "";
+    let isLast = true;
+    for (let j = i + 1; j < dirs.length; j++) {
+      const dj = dirs[j];
+      if (dj.depth < depth) break;
+      if (dj.depth === depth) {
+        const djParent = dj.path.includes("/") ? dj.path.slice(0, dj.path.lastIndexOf("/")) : "";
+        if (djParent === parent) { isLast = false; break; }
+      }
+    }
+    const indent = (depth - 1) * 20;
+    const branch = isLast ? "└─" : "├─";
+    const count = d.file_count ? `<span class="filecount">${d.file_count} 文件</span>` : "";
+    return `<div class="line" style="padding-left:${indent}px"><span class="branch">${branch}</span><span class="folder">${escapeHtml(d.name)}/</span><span class="purpose">${escapeHtml(d.purpose || "")}</span>${count}</div>`;
   }).join("");
   return `
     <div class="card full">

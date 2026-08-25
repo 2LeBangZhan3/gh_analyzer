@@ -55,16 +55,6 @@ def generate_summary(data: RepoData, stack: TechStack) -> str:
             lines.append(f"- {lang}：{count} 个文件")
         lines.append("")
 
-    # 目录结构解读
-    if stack.top_dirs:
-        lines.append("**目录结构解读**")
-        lines.append("")
-        lines.append("| 目录 | 用途 |")
-        lines.append("| --- | --- |")
-        for name, purpose in stack.top_dirs:
-            lines.append(f"| `{name}/` | {purpose or '—'} |")
-        lines.append("")
-
     return "\n".join(lines).rstrip() + "\n"
 
 

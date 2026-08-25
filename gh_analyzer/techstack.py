@@ -142,37 +142,353 @@ LANGUAGE_BY_EXTENSION = {
     ".bash": "Shell",
 }
 
-# 顶级目录的常见用途描述
+# 目录名（精确匹配，小写）-> 用途
 DIR_PURPOSES = {
+    # 源代码与包结构
     "src": "源代码",
+    "source": "源代码",
+    "sources": "源代码",
     "lib": "核心库",
+    "libs": "核心库",
+    "library": "核心库",
     "pkg": "包",
-    "app": "应用主目录",
-    "api": "API 接口",
-    "cmd": "命令行入口",
+    "packages": "包",
     "internal": "内部实现",
+    "internals": "内部实现",
+    "core": "核心逻辑",
+    "common": "公共代码",
+    "shared": "共享代码",
+    "app": "应用主目录",
+    "apps": "应用模块集合",
+    "cmd": "命令行入口",
+    "commands": "命令行入口",
+    "cli": "命令行界面",
+    "bin": "可执行文件/脚本",
+    "modules": "模块",
+    "components": "组件",
+    "plugins": "插件",
+    "addons": "扩展/插件",
+    "extensions": "扩展",
+    "handlers": "处理器",
+    "middleware": "中间件",
+    "middlewares": "中间件",
+    "interceptors": "拦截器",
+    "guards": "守卫",
+    "filters": "过滤器",
+    "validators": "校验器",
+    "exceptions": "异常处理",
+    "errors": "错误处理",
+    "controllers": "控制器",
+    "services": "服务层",
+    "service": "服务层",
+    "models": "数据模型",
+    "model": "数据模型",
+    "entities": "实体",
+    "entity": "实体",
+    "repositories": "数据访问层",
+    "repository": "数据访问层",
+    "dao": "数据访问层",
+    "dto": "数据传输对象",
+    "schemas": "数据结构/Schema",
+    "schema": "数据结构/Schema",
+    "types": "类型定义",
+    "interfaces": "接口定义",
+    "constants": "常量定义",
+    "consts": "常量定义",
+    "enums": "枚举定义",
+    "utils": "工具函数",
+    "util": "工具函数",
+    "utils_helpers": "工具函数",
+    "helpers": "辅助函数",
+    "helper": "辅助函数",
+    # API 与路由
+    "api": "API 接口",
+    "apis": "API 接口",
+    "endpoints": "API 端点",
+    "routes": "路由",
+    "router": "路由",
+    "routers": "路由",
+    "views": "视图",
+    "pages": "页面",
+    "layouts": "布局",
+    "partials": "局部视图",
+    "templates": "模板",
+    "template": "模板",
+    # 测试
     "tests": "测试代码",
     "test": "测试代码",
-    "spec": "测试代码",
+    "testing": "测试代码",
+    "spec": "测试/规范代码",
+    "specs": "测试/规范代码",
+    "e2e": "端到端测试",
+    "integration": "集成测试",
+    "unit": "单元测试",
+    "fixtures": "测试数据/夹具",
+    "testdata": "测试数据",
+    "mocks": "Mock 数据",
+    "mock": "Mock 数据",
+    "stubs": "桩代码",
+    "benchmarks": "基准测试",
+    "benchmark": "基准测试",
+    # 文档与示例
     "docs": "文档",
     "doc": "文档",
-    "examples": "示例",
-    "example": "示例",
-    "scripts": "脚本",
+    "documentation": "文档",
+    "examples": "示例代码",
+    "example": "示例代码",
+    "samples": "示例代码",
+    "demo": "演示代码",
+    "notebooks": "Notebook",
+    "guides": "指南文档",
+    "tutorials": "教程",
+    # 脚本与工具
+    "scripts": "脚本工具",
+    "script": "脚本工具",
     "tools": "工具脚本",
+    "tool": "工具脚本",
+    "hack": "辅助脚本",
+    "build_scripts": "构建脚本",
+    # 构建与产物
+    "build": "构建产物",
+    "dist": "发布产物",
+    "out": "输出产物",
+    "output": "输出产物",
+    "target": "构建产物",
+    "release": "发布产物",
+    "artifacts": "构建产物",
+    # 资源与静态文件
+    "assets": "静态资源",
+    "static": "静态资源",
+    "public": "静态公共资源",
+    "images": "图片资源",
+    "img": "图片资源",
+    "icons": "图标资源",
+    "fonts": "字体资源",
+    "media": "媒体资源",
+    "css": "样式文件",
+    "styles": "样式文件",
+    "themes": "主题",
+    "locales": "多语言资源",
+    "i18n": "国际化",
+    "lang": "语言资源",
+    "translations": "翻译资源",
+    "vendor": "第三方依赖",
+    "node_modules": "Node 依赖",
+    "third_party": "第三方代码",
+    # 配置
+    "config": "配置",
+    "configs": "配置",
+    "conf": "配置",
+    "settings": "配置",
+    "environments": "环境配置",
+    "profiles": "配置档",
+    # 部署与基础设施
     "docker": "容器化配置",
     "deploy": "部署配置",
     "deployment": "部署配置",
-    "config": "配置",
-    "configs": "配置",
-    "assets": "静态资源",
-    "static": "静态资源",
-    "public": "公共资源",
-    "migrations": "数据库迁移",
-    "fixtures": "测试数据",
+    "deployments": "部署配置",
+    "k8s": "Kubernetes 配置",
+    "kubernetes": "Kubernetes 配置",
+    "helm": "Helm 部署模板",
+    "charts": "Helm Charts",
+    "infra": "基础设施配置",
+    "infrastructure": "基础设施配置",
+    "terraform": "基础设施即代码",
+    "ci": "CI 配置",
+    "workflows": "CI 工作流",
+    "hooks": "Git 钩子/脚本钩子",
     ".github": "GitHub 工作流/CI",
     ".gitlab": "GitLab 配置",
+    ".circleci": "CircleCI 配置",
+    ".husky": "Git 钩子",
+    ".vscode": "编辑器配置",
+    ".idea": "IDE 配置",
+    ".devcontainer": "开发容器配置",
+    # 数据
+    "data": "数据文件",
+    "datasets": "数据集",
+    "db": "数据库相关",
+    "database": "数据库相关",
+    "sql": "SQL 脚本",
+    "migrations": "数据库迁移",
+    "migration": "数据库迁移",
+    "seeds": "种子数据",
+    "seed": "种子数据",
+    # 运行时与日志
+    "logs": "日志",
+    "log": "日志",
+    "tmp": "临时文件",
+    "temp": "临时文件",
+    "cache": "缓存",
+    "caches": "缓存",
+    "runtime": "运行时数据",
+    # 依赖声明
+    "requirements": "依赖声明",
+    "deps": "依赖",
+    "dependencies": "依赖",
 }
+
+
+# 目录名分词关键词 -> 用途（按顺序匹配，先命中的优先）
+TOKEN_PURPOSES = [
+    ("migration", "数据库迁移"),
+    ("migrate", "数据库迁移"),
+    ("benchmark", "基准测试"),
+    ("integration", "集成测试"),
+    ("e2e", "端到端测试"),
+    ("test", "测试代码"),
+    ("spec", "测试/规范代码"),
+    ("fixture", "测试数据/夹具"),
+    ("mock", "Mock 数据"),
+    ("stub", "桩代码"),
+    ("controller", "控制器"),
+    ("handler", "处理器"),
+    ("middleware", "中间件"),
+    ("interceptor", "拦截器"),
+    ("guard", "守卫"),
+    ("filter", "过滤器"),
+    ("validator", "校验器"),
+    ("repository", "数据访问层"),
+    ("dao", "数据访问层"),
+    ("dto", "数据传输对象"),
+    ("entity", "实体"),
+    ("schema", "数据结构/Schema"),
+    ("model", "数据模型"),
+    ("service", "服务层"),
+    ("endpoint", "API 端点"),
+    ("route", "路由"),
+    ("router", "路由"),
+    ("view", "视图"),
+    ("layout", "布局"),
+    ("template", "模板"),
+    ("page", "页面"),
+    ("component", "组件"),
+    ("module", "模块"),
+    ("plugin", "插件"),
+    ("extension", "扩展"),
+    ("example", "示例代码"),
+    ("sample", "示例代码"),
+    ("demo", "演示代码"),
+    ("tutorial", "教程"),
+    ("notebook", "Notebook"),
+    ("doc", "文档"),
+    ("readme", "文档"),
+    ("guide", "指南文档"),
+    ("script", "脚本工具"),
+    ("tool", "工具脚本"),
+    ("helper", "辅助函数"),
+    ("util", "工具函数"),
+    ("common", "公共代码"),
+    ("shared", "共享代码"),
+    ("core", "核心逻辑"),
+    ("config", "配置"),
+    ("setting", "配置"),
+    ("profile", "配置档"),
+    ("environment", "环境配置"),
+    ("deploy", "部署配置"),
+    ("deployment", "部署配置"),
+    ("workflow", "CI 工作流"),
+    ("kubernetes", "Kubernetes 配置"),
+    ("terraform", "基础设施即代码"),
+    ("infra", "基础设施配置"),
+    ("docker", "容器化配置"),
+    ("helm", "Helm 模板"),
+    ("chart", "Helm Charts"),
+    ("asset", "静态资源"),
+    ("static", "静态资源"),
+    ("image", "图片资源"),
+    ("icon", "图标资源"),
+    ("font", "字体资源"),
+    ("media", "媒体资源"),
+    ("style", "样式文件"),
+    ("theme", "主题"),
+    ("locale", "多语言资源"),
+    ("i18n", "国际化"),
+    ("translation", "翻译资源"),
+    ("vendor", "第三方依赖"),
+    ("dataset", "数据集"),
+    ("database", "数据库相关"),
+    ("seed", "种子数据"),
+    ("sql", "SQL 脚本"),
+    ("log", "日志"),
+    ("cache", "缓存"),
+    ("tmp", "临时文件"),
+    ("temp", "临时文件"),
+    ("constant", "常量定义"),
+    ("enum", "枚举定义"),
+    ("interface", "接口定义"),
+    ("type", "类型定义"),
+    ("exception", "异常处理"),
+    ("error", "错误处理"),
+    ("api", "API 接口"),
+]
+
+
+def infer_dir_purpose(name: str, files: list[str]) -> str:
+    """推断单个目录的用途：精确名 -> 关键词 -> 内容特征 -> 兜底。"""
+    lowered = name.lower()
+
+    # 1. 精确匹配
+    if lowered in DIR_PURPOSES:
+        return DIR_PURPOSES[lowered]
+
+    # 2. 分词后做关键词匹配
+    tokens = _tokens(lowered)
+    for keyword, purpose in TOKEN_PURPOSES:
+        if keyword in tokens:
+            return purpose
+
+    # 3. 根据目录内文件内容推断
+    purpose = _infer_by_content(files)
+    if purpose:
+        return purpose
+
+    # 4. 兜底：目录内是否有代码文件
+    if any(LANGUAGE_BY_EXTENSION.get(_ext(f)) for f in files):
+        return "代码目录"
+    return "其他目录"
+
+
+def _tokens(name: str) -> set[str]:
+    """把目录名拆成小写单词集合（处理 camelCase / snake_case / kebab-case）。"""
+    s = re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", name)
+    s = re.sub(r"[^a-z0-9]+", " ", s)
+    return set(s.split())
+
+
+def _infer_by_content(files: list[str]) -> str:
+    """根据目录内文件的名字/扩展名推断用途。"""
+    if not files:
+        return ""
+    names = [f.rsplit("/", 1)[-1].lower() for f in files]
+    exts = {_ext(f) for f in files}
+
+    # 关键文件名
+    if any(n == "dockerfile" for n in names):
+        return "容器化配置"
+    if any(n in ("makefile", "cmakelists.txt", "justfile") for n in names):
+        return "构建配置"
+
+    # 测试文件特征：test_*.py、*_test.go、*.spec.ts 等；测试文件需占多数，
+    # 避免把「源码 + 少量测试」的目录误判为纯测试目录
+    test_pattern = re.compile(r"(^|[_./-])(test|spec)(s)?($|[_./-])")
+    test_count = sum(1 for n in names if test_pattern.search(n))
+    if test_count and test_count * 2 > len(names):
+        return "测试代码"
+
+    # 扩展名特征（按目录内全部文件的扩展名集合判断）
+    if ".sql" in exts:
+        return "SQL 脚本"
+    if exts and exts <= {".md", ".mdx", ".rst", ".txt"}:
+        return "文档"
+    if exts and exts <= {".json", ".yaml", ".yml", ".toml", ".ini", ".conf", ".env", ".properties"}:
+        return "配置"
+    if exts and exts <= {".sh", ".bash", ".zsh", ".bat", ".ps1"}:
+        return "脚本"
+    if exts and exts <= {".html", ".htm", ".css", ".scss", ".less", ".js", ".ts", ".png", ".jpg", ".jpeg", ".svg", ".gif", ".ico", ".woff", ".woff2", ".ttf", ".eot", ".mp4", ".webp"}:
+        return "静态资源"
+
+    return ""
 
 
 @dataclass
@@ -185,7 +501,7 @@ class TechStack:
     tools: list[str] = field(default_factory=list)
     file_count_by_language: dict[str, int] = field(default_factory=dict)
     total_files: int = 0
-    top_dirs: list[tuple[str, str]] = field(default_factory=list)  # (目录, 用途)
+    directories: list[dict] = field(default_factory=list)  # {path, name, depth, purpose, file_count}
 
     @property
     def primary_language(self) -> str:
@@ -196,8 +512,8 @@ def detect_tech_stack(data: RepoData) -> TechStack:
     """综合仓库数据，输出技术栈。"""
     stack = TechStack()
 
-    # 1. 语言（优先用 GitHub 的语言统计，缺失时按扩展名统计）
-    if data.languages:
+    # 1. 语言（优先用 GitHub 的语言统计，缺失或全为 0 时按扩展名统计）
+    if data.languages and sum(data.languages.values()) > 0:
         total = sum(data.languages.values())
         ranked = sorted(data.languages.items(), key=lambda kv: kv[1], reverse=True)
         stack.languages = [(name, round(100 * count / total, 1)) for name, count in ranked]
@@ -227,8 +543,8 @@ def detect_tech_stack(data: RepoData) -> TechStack:
     if "makefile" in paths:
         _add_unique(stack.tools, "Make")
 
-    # 4. 顶级目录结构
-    stack.top_dirs = _analyze_top_dirs(data.files)
+    # 4. 完整目录结构（每个目录都推断用途）
+    stack.directories = analyze_directories(data.files)
 
     return stack
 
@@ -267,14 +583,66 @@ def _ext(path: str) -> str:
     return path[dot:].lower()
 
 
-def _analyze_top_dirs(files: list[str]) -> list[tuple[str, str]]:
-    top: dict[str, int] = {}
+def analyze_directories(files: list[str]) -> list[dict]:
+    """构建完整目录树，为每个目录推断用途。
+
+    返回按路径排序的目录列表，每项为
+    ``{path, name, depth, purpose, file_count}``；``depth`` 从 1 开始，
+    用于前端/报告按层级渲染成树。
+    """
+    files_by_dir: dict[str, list[str]] = {}
     for path in files:
         parts = path.split("/")
-        if len(parts) > 1 and not parts[0].startswith("."):
-            top[parts[0]] = top.get(parts[0], 0) + 1
-    ranked = sorted(top.items(), key=lambda kv: kv[1], reverse=True)[:12]
-    return [(name, DIR_PURPOSES.get(name, "")) for name, _ in ranked]
+        # 对路径中的每一层目录（不含文件名本身）登记该文件
+        for i in range(1, len(parts)):
+            dir_path = "/".join(parts[:i])
+            files_by_dir.setdefault(dir_path, []).append(path)
+
+    directories: list[dict] = []
+    for dir_path in sorted(files_by_dir.keys()):
+        name = dir_path.rsplit("/", 1)[-1]
+        files_in_dir = files_by_dir[dir_path]
+        direct_files = sum(
+            1 for f in files_in_dir if f.rsplit("/", 1)[0] == dir_path
+        )
+        directories.append(
+            {
+                "path": dir_path,
+                "name": name,
+                "depth": dir_path.count("/") + 1,
+                "purpose": infer_dir_purpose(name, files_in_dir),
+                "file_count": direct_files,
+            }
+        )
+    return directories
+
+
+def render_directory_tree(directories: list[dict]) -> str:
+    """把目录列表渲染成带用途说明的文本树。"""
+    if not directories:
+        return ""
+    lines: list[str] = []
+    n = len(directories)
+    for i, d in enumerate(directories):
+        depth = d["depth"]
+        parent = d["path"].rsplit("/", 1)[0] if "/" in d["path"] else ""
+
+        is_last = True
+        j = i + 1
+        while j < n and directories[j]["depth"] >= depth:
+            dj = directories[j]
+            if dj["depth"] == depth:
+                dj_parent = dj["path"].rsplit("/", 1)[0] if "/" in dj["path"] else ""
+                if dj_parent == parent:
+                    is_last = False
+                    break
+            j += 1
+
+        indent = "    " * (depth - 1)
+        branch = "└── " if is_last else "├── "
+        count = f" ({d['file_count']} 个文件)" if d["file_count"] else ""
+        lines.append(f"{indent}{branch}{d['name']}/  # {d['purpose']}{count}")
+    return "\n".join(lines)
 
 
 def _add_unique(items: list[str], item: str) -> None:
